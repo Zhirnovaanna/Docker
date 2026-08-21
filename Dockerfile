@@ -4,13 +4,14 @@ ENV SOFT=/soft
 
 # Дополнительные пакеты
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	build-essential \
+        build-essential \
         bzip2 \
         ca-certificates \
         cmake \
         libbz2-dev \
         libcurl4-openssl-dev \
         liblzma-dev \
+        libncurses-dev \
         wget \
         zlib1g-dev \
         && rm -rf /var/lib/apt/lists/*
@@ -42,6 +43,20 @@ RUN cd /tmp \
 	&& cd / \
 	&& rm -rf /tmp/htslib-1.24.tar.bz2 /tmp/htslib-1.24
 
+# SAMtools, version 1.24, released 2026-07-09
+# SAMtools, version 1.24, released 2026-07-09
+RUN cd /tmp \
+	&& wget -q https://github.com/samtools/samtools/releases/download/1.24/samtools-1.24.tar.bz2 \
+	&& tar -xjf samtools-1.24.tar.bz2 \
+	&& cd samtools-1.24 \
+	&& ./configure \
+		--prefix=${SOFT}/samtools-1.24 \
+		--with-htslib=${SOFT}/htslib-1.24 \
+		LDFLAGS="-Wl,-rpath,${SOFT}/htslib-1.24/lib" \
+	&& make -j $(nproc) \
+	&& make install \
+	&& cd / \
+	&& rm -rf /tmp/samtools-1.24.tar.bz2 /tmp/samtools-1.24
 
 WORKDIR /data
 CMD ["bash"]
