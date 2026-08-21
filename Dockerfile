@@ -14,7 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libncurses-dev \
         wget \
         zlib1g-dev \
-	libgsl-dev \
+        autoconf \
+        automake \
+        perl \
+        pkg-config \
         && rm -rf /var/lib/apt/lists/*
 
 # libdeflate, version 1.25, released 2025-11-01
@@ -71,6 +74,27 @@ RUN cd /tmp \
 	&& make install \
 	&& cd / \
 	&& rm -rf /tmp/bcftools-1.24.tar.bz2 /tmp/bcftools-1.24
+
+# VCFtools, version 0.1.17, released 2025-05-15
+RUN cd /tmp \
+	&& wget -q -O vcftools-0.1.17.tar.gz https://github.com/vcftools/vcftools/archive/refs/tags/v0.1.17.tar.gz \
+	&& tar -xzf vcftools-0.1.17.tar.gz \
+	&& cd vcftools-0.1.17 \
+	&& ./autogen.sh \
+	&& ./configure --prefix=${SOFT}/vcftools-0.1.17 \
+	&& make -j $(nproc) \
+	&& make install \
+	&& ln -sfn "$(dirname $(find ${SOFT}/vcftools-0.1.17/share/perl -name Vcf.pm | head -1))" \
+		${SOFT}/vcftools-0.1.17/share/perl5 \
+	&& cd / \
+	&& rm -rf /tmp/vcftools-0.1.17.tar.gz /tmp/vcftools-0.1.17
+
+# Переменные окружения
+ENV PATH="${SOFT}/libdeflate-1.25/bin:${SOFT}/htslib-1.24/bin:${SOFT}/samtools-1.24/bin:${SOFT}/bcftools-1.24/bin:${SOFT}/vcftools-0.1.17/bin:${PATH}"
+ENV PERL5LIB="${SOFT}/vcftools-0.1.17/share/perl5:${PERL5LIB}"
+ENV SAMTOOLS="${SOFT}/samtools-1.24/bin/samtools"
+ENV BCFTOOLS="${SOFT}/bcftools-1.24/bin/bcftools"
+ENV VCFTOOLS="${SOFT}/vcftools-0.1.17/bin/vcftools"
 
 WORKDIR /data
 CMD ["bash"]
